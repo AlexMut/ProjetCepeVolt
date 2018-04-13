@@ -30,8 +30,9 @@ get_meteo <- function(ville, periode) {
   do.call("rbind.fill", tmp) # appel recursif de rbind pour fusionner les éléments de liste tmp
   
 }
+ ville="Zaventem"
+ periode = 2017
+tmp <- get_meteo(ville, periode)
 
-tmp <- get_meteo("Zaventem", 2017)
-
-write.csv2(tmp, paste0(paste("Data/", ville, periode, sep = "_"), ".csv"))
+write.csv2(tmp, paste0("Data/", paste(ville, periode, sep = "_"), ".csv"))
 
