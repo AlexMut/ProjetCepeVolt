@@ -2,6 +2,7 @@
 # Récupération données météo Dark Sky
 
 library(darksky)
+library(plyr)
 
 source('darksky_key.R')
 
@@ -11,8 +12,8 @@ source('darksky_key.R')
 
 get_meteo <- function(ville, periode) {
   
-  #debut <- as.Date(paste(periode-1, "-01-01", sep = ""))
-  debut <- as.Date(paste(periode, "-11-01", sep = "")) # pour tester sur 2 mois
+  debut <- as.Date(paste(periode-1, "-01-01", sep = ""))
+  #debut <- as.Date(paste(periode, "-11-01", sep = "")) # pour tester sur 2 mois
   fin <- as.Date(paste(as.character(periode), "-12-31", sep = ""))
   histo <- seq(debut, fin, by="day")
   histo <- as.list(paste(histo, "T00:00:00-0400", sep = ""))
