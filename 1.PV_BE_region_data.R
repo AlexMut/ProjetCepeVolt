@@ -4,9 +4,10 @@
 
 # /!\ très long à touner => A optimiser en enlevant les boucles et en utilisant du datatable ? en supprimant la sauvegarde au milieu du code ?
 # mes proxys sont inutiles pour vous :)
-opts <- list(proxy="proxygin.melinda.local", proxyport=8080)
+#opts <- list(proxy="proxygin.melinda.local", proxyport=8080)
+opts <- list()
 #dates à modifier, commencez petit :)
-histo <- seq(as.Date("2012-11-01"),as.Date("2018-03-01"), by="month")
+histo <- seq(as.Date("2013-01-01"),as.Date("2017-12-31"), by="month")
 
 
 library('RCurl')
@@ -68,7 +69,7 @@ capa <- function(nurl, regions, dates)
 op <- par(mfrow = c(1,3))
 elia_before <- capa("http://publications.elia.be/Publications/publications/solarforecasting.v3.svc/GetCapacities?dateFrom=2014-01-01&dateTo=2016-01-31&sourceId=", regions, "before 10/09/2015")
 elia_2015  <- capa("http://publications.elia.be/Publications/publications/solarforecasting.v3.svc/GetCapacities?dateFrom=2016-01-01&dateTo=2016-01-31&sourceId=", regions, "after 10/09/2015") # change i, 10/09/2015
-elia_2018  <- capa("http://publications.elia.be/Publications/publications/solarforecasting.v3.svc/GetCapacities?dateFrom=2018-03-01&dateTo=2018-03-31&sourceId=", regions, "after 21/02/2018") #change 21/02/2018
+elia_2018  <- capa("http://publications.elia.be/Publications/publications/solarforecasting.v3.svc/GetCapacities?dateFrom=2018-03-01&dateTo=2018-03-31&sourceId=", regions, "after 21/02/2018") # change 21/02/2018
 par(op)
 
 
@@ -76,8 +77,10 @@ par(op)
 # Calcul des LoadFactor
 #----------------------
 
-pv_data <- read.csv2("Data/Table_AUTO.csv")
-pv_data$dtime_utc   <- as.POSIXct(pv_data$Dates, format ="%Y-%m-%d %H:%M", tz = "UTC")
+pv_data <- read.csv2("Data/PV/Table_AUTO.csv")
+pv_data$dtime_utc   <- as.POSIXct(pv_data$Dates, format ="%Y-%m-%d %H:%M", tz="Europe/Brussels")
+attr(pv_data$dtime_utc, "tzone") <- "UTC"
+
 for (r in 1:length(regions))
 {
   capa_r <- ifelse(pv_data$dtime_utc <="2015-09-09 22:00", 
@@ -88,7 +91,8 @@ for (r in 1:length(regions))
   pv_data[paste("DA_LoadFactor",regions[r], sep="_")] <- pv_data[paste("Forecast", regions[r], sep="_")]/capa_r*100
   pv_data[paste("ID_LoadFactor",regions[r], sep="_")] <- pv_data[paste("ForecastUpdated", regions[r], sep="_")]/capa_r*100
   }
-write.csv2(pv_data,"Data/Table_AUTO2.csv", row.names=FALSE) # Fichier de trravail avec LoadFactor
+write.csv2(pv_data,"Data/Table_AUTO2.csv", row.names=FALSE) # Fichier de travail avec LoadFactor
+
 
 
 # Fusion

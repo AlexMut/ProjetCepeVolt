@@ -4,7 +4,7 @@
 library(darksky)
 library(plyr)
 
-source('darksky_key.R')
+#source('darksky_key.R')
 
 # fonction pour récupérer les données par heure : 
 # - ville : donner nom et coorespondance coord via base. Attention 
@@ -30,8 +30,9 @@ get_meteo <- function(ville, periode) {
   do.call("rbind.fill", tmp) # appel recursif de rbind pour fusionner les éléments de liste tmp
   
 }
- ville="Zaventem"
- periode = 2017
+
+ville="Louvain-la-neuve"
+periode = 2013
 tmp <- get_meteo(ville, periode)
 
 write.csv2(tmp, paste0("Data/", paste(ville, periode, sep = "_"), ".csv"))

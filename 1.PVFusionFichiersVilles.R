@@ -37,8 +37,8 @@ liste_ville <- unique(lapply(liste_fichiers, function(i) {strsplit(i, "_")[[1]][
 
 
 # Cumul nom villes 
-nom_fichier <- do.call("paste0", liste_ville) 
-
+#nom_fichier <- do.call("paste0", liste_ville) 
+nom_fichier <- "MeteoFin"
 
 # Ecriture 
 write.csv2(df[,-1], paste0("Data/Météo/", nom_fichier, ".csv"), row.names = FALSE) 
