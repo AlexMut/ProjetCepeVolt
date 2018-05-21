@@ -1,29 +1,45 @@
 
-#install.packages("sp")
+############################
+# SHINY PJ certificat
+############################
+
+path <- "D:/Certificat Data Scientist/PJ/ProjetCepeVolt/"
+
 #install.packages("BelgiumMaps.StatBel", repos = "http://www.datatailor.be/rcube", type = "source")
 
 library(shiny)
 library(leaflet)
 library(BelgiumMaps.StatBel)
 library(lubridate)
+library(sp)
+library(raster)
 
+#-----------------------------------
+# Modifier le shapefiles des données
+#-----------------------------------
 data(BE_ADMIN_PROVINCE)
 data(BE_ADMIN_REGION)
 
-#BE_ADMIN_REGION@data$TX_RGN_DESCR_FR
-#BE_ADMIN_PROVINCE@dataTX_PROV_DESCR_FR
+#homogénéiser les noms avec le reste du projet
+BE_ADMIN_PROVINCE@data$TX_PROV_DESCR_FR <- c("Antwerp","Flemish.Brabant","Walloon.Brabant",
+                                             "West.Flanders","East.Flanders","Hainaut", 
+                                             "Liège","Limburg","Luxembourg","Namur")
+BE_ADMIN_PROVINCE@data$zones <- BE_ADMIN_PROVINCE@data$TX_PROV_DESCR_FR
 
-#Sera importé de la base de données météo
-villes <- data.frame(Ville = c("Zaventem", "Bierset", "Chièvres", "Deurne", "Elsenborn", "Florennes", "Gent", "Kleine Brogel", 
-                               "Oostende", "Saint-Hubert", "Virton"),
-                     Latitude = c(50.8833, 50.655,50.5879, 51.2167, 50.4806, 50.25, 51.05, 51.1667, 51.2167,50.0167,49.5667 ),
-                     Longitude = c(4.4667, 5.45092, 3.8071, 4.4167, 6.2514, 4.6167, 3.7167, 5.4333, 2.9167, 5.3833, 5.5333))
+BE_ADMIN_REGION@data$TX_RGN_DESCR_FR[BE_ADMIN_REGION@data$TX_RGN_DESCR_FR=="Région de Bruxelles-Capitale"] <- "Brussels"
+BE_ADMIN_REGION@data$zones <- BE_ADMIN_REGION@data$TX_RGN_DESCR_FR
 
-#donnees PV par region
-data <- read.csv2("D:/Certificat Data Scientist/PJ/Data/Table_Auto2.csv")
-data$dtime_utc  <- as.POSIXct(data$Dates, format ="%Y-%m-%d %H:%M", tz = "UTC")
-data$month <- month(data$dtime_utc)
-data$hour <- hour(data$dtime_utc)
+#rajouter la couche de bruxelles
+BE_ADMIN <- bind(BE_ADMIN_PROVINCE,BE_ADMIN_REGION[-(1:2),], keepnames=FALSE)
+
+#-----------------------------------
+# Import des coordonnées des stations météo
+#-----------------------------------
+villes <- read.csv2(paste(path,"Data/VillesBelReg.csv",sep=""))
+
+#-----------------------------------
+#donnees PV par region (defaut)
+#-----------------------------------
 
 ui <- fluidPage(
   
@@ -63,18 +79,27 @@ server <- function(input, output, session) {
   output$mymap <- renderLeaflet({
     m <- leaflet(villes) 
     m <- addTiles(m) 
-    m <- addMarkers(m, lng = ~Longitude, lat = ~Latitude, popup = ~Ville)
-    m <- addPolylines(m, data = BE_ADMIN_PROVINCE, weight = 1.5, color = "black")
-    m <- addPolygons(m, data = BE_ADMIN_PROVINCE, layerId = BE_ADMIN_PROVINCE@data$TX_PROV_DESCR_FR, 
+    m <- addMarkers(m, lng = ~Long, lat = ~Lat, popup = ~Ville)
+    m <- addPolylines(m, data = BE_ADMIN, weight = 1.5, color = "black")
+    m <- addPolygons(m, data = BE_ADMIN, layerId = BE_ADMIN@data$zones, 
                      fillColor = topo.colors(11, alpha = NULL), stroke = FALSE)
     m
   })
   
   formulaText <- reactive({
-    paste(input$profile, "~", input$var) # a modifier en fonction de la région choisie en cliquant :)
+    paste(paste(input$profile,input$mymap_shape_click$id,sep="_"), "~", input$var) 
+    # a modifier en fonction de la région choisie en cliquant :)
   })
 
   output$mybp <- renderPlot({
+    data <- read.csv2(paste(path,
+                             paste("Data/db_fin_",input$mymap_shape_click$id,".csv",sep=""),
+                             sep=""), 
+                       stringsAsFactors = FALSE)
+    data$dtime_utc  <- as.POSIXct(data$dtime_utc, format ="%Y-%m-%d %H:%M", tz = "UTC")
+    data$month <- month(data$dtime_utc)
+    data$hour <- hour(data$dtime_utc)
+    
     boxplot(as.formula(formulaText()),
             data = data,
             col = "lightblue", pch = 19,
