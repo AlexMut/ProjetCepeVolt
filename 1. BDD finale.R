@@ -9,13 +9,15 @@ regions <- c("Belgium", "Flanders","Wallonia","Brussels","Antwerp","Hainaut","Li
 
 #regions <- "Limburg"
 
+tmp <- read.csv2("Data/PV/Table_AUTO2.csv")
+Ieff <- read.csv2("Data/Radiations/Ieff.csv")
+proj <- read.csv2("Data/Radiations/aoi_proj.csv")
+
 for (i in 1:length(regions)) {
   
 r <- regions[i]
 
 # PV
-
-tmp <- read.csv2("Data/PV/Table_AUTO2.csv")
 
 sel <- c("dtime_utc", paste(c("LoadFactor", "DA_LoadFactor", "ID_LoadFactor"), r, sep = "_"))
 
@@ -43,14 +45,11 @@ meteo2 <- meteo[which(meteo$ville == station), ]
 
 # radiations
 
-Ieff <- read.csv2("Data/Radiations/Ieff.csv")
 Ieff2 <- Ieff[, c("time", station)]
 colnames(Ieff2)[2] <- "Ieff"
 
-proj <- read.csv2("Data/Radiations/aoi_proj.csv")
 proj2 <- proj[, c("time", station)]
 colnames(proj2)[2] <- "proj"
-
 
 # Fusion
 
@@ -67,6 +66,15 @@ db_fin <- merge(pv_heure, meteo2, by = "dtime_utc", all.x = TRUE)
 db_fin <- merge(db_fin, Ieff2, by = "dtime_utc", all.x = TRUE)
 
 db_fin <- merge(db_fin, proj2, by = "dtime_utc", all.x = TRUE)
+
+# Nettoyage variables inutiles
+db_fin <- dplyr::select(db_fin, -c(time.x, time.y, icon, summary, time))
+
+# Changement nom variables LF
+
+names(db_fin)[which(names(db_fin) == paste0("LoadFactor_",r))] <- "LoadFactor"
+names(db_fin)[which(names(db_fin) == paste0("DA_LoadFactor_",r))] <- "DA_LoadFactor"
+names(db_fin)[which(names(db_fin) == paste0("ID_LoadFactor_",r))] <- "ID_LoadFactor"
 
 write.csv2(db_fin, paste("Data/db_fin_", r, ".csv", sep = ""), row.names = FALSE)
 
